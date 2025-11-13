@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pac-Done (Todo App)</title>
+    <link rel="stylesheet" href="css/style.css">
+    
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <header>
+        <h1>Pac-Done</h1>
+    </header>
+
+    <main>
+        <form id="task-form">
+            <input type="text" id="task-input" placeholder="課題（タスク）を入力..." required>
+            <input type="date" id="task-deadline">
+            <button type="submit">餌を配置</button>
+        </form>
+
+        <div id="pacman-stage-container">
+            <div id="pacman-maze">
+                
+<div id="pac-done-icon"></div> 
+
+                
+<div id="task-list" class="task-container">
+                    
+</div>
+            </div>
+        </div>
+    </main>
+
+    <script src="js/app.js"></script>
+</body>
+</html>

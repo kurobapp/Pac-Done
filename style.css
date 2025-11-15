@@ -62,11 +62,14 @@ header h1 {
     grid-template-rows: repeat(16, 1fr); 
 
     gap: 0;
-    width: 100%;
-    height: 450px;
+    
+    height: 450px; 
+    width: calc(450px / 16 * 31); 
+    max-width: 100%; 
+    margin: 0 auto; 
+
     background-color: #000;
-    position: relative;
-    overflow: hidden;
+    overflow: hidden; 
     border: 2px solid #0000FF;
 }
 
@@ -78,57 +81,64 @@ header h1 {
 }
 
 #pac-done-icon {
-    width: 30px;
-    height: 30px;
+    position: absolute; 
+    
+    width: 26px;
+    height: 26px;
+
     background-color: #FFFF00;
     border-radius: 50%;
-    grid-row: 13; /* JS配列の 12行目 */
-    grid-column: 2; /* JS配列の 1列目 */
-    margin-top: 2px;
-    margin-left: 2px;
     
-    z-index: 2;
-    clip-path: polygon(0% 0%, 100% 0%, 75% 50%, 100% 100%, 0% 100%, 0% 0%);
-    transform: rotate(45deg);
-    border: 2px solid #FFD700;
+    margin: auto; 
+    z-index: 10; 
+    
+    /* ★変更: 右向きの口 (50% 50% = 口の奥) */
+    /* (口を大きくしたい場合は 50% 50% の 50% を小さくします) */
+    clip-path: polygon(100% 0%, 50% 50%, 100% 100%, 0% 100%, 0% 0%);
+    
+    border: 1px solid #FFD700;
+    box-sizing: border-box; 
+    position: relative;
+    transition: transform 0.1s ease-out, clip-path 0.05s linear;
 }
+
+/* ★変更: パクパク用 (口を閉じた状態) */
+#pac-done-icon.mouth-closed {
+    /* ★変更: 完全に閉じた円形 (clip-pathをリセット) */
+    clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%);
+}
+
 
 /* タスクアイテム（餌）コンテナ */
 #task-list.task-container {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 5px;
-    padding: 10px;
-    align-content: flex-start;
-    justify-content: flex-start;
+    display: contents;
+    z-index: 1; 
 }
 
-/* タスクアイテム (変更なし) */
+/* タスクアイテム (餌) */
 .task-item {
+    position: absolute; 
+    width: 14px;
+    height: 14px;
     background-color: #FFFF00;
-    width: 18px;
-    height: 18px;
     border-radius: 50%;
     display: flex;
     justify-content: center;
     align-items: center;
     cursor: pointer;
-    position: relative;
-    z-index: 1;
+    z-index: 9; 
     transition: transform 0.2s, background-color 0.3s;
     box-shadow: 0 0 5px rgba(255, 255, 0, 0.7);
+    margin: auto; 
+    box-sizing: border-box; 
 }
 .task-item:hover {
     transform: scale(1.6);
     box-shadow: 0 0 10px rgba(255, 255, 0, 1);
+    z-index: 11; 
 }
 
-/* ツールチップ関連 */
+/* ツールチップ関連 (変更なし) */
 .task-item .task-text {
     visibility: hidden;
     width: 220px;
@@ -174,7 +184,7 @@ header h1 {
     bottom: 120%;
 }
 
-/* レスポンシブ対応 */
+/* レスポンシブ対応 (変更なし) */
 @media (max-width: 768px) {
     header h1 {
         font-size: 1.8em;
@@ -185,14 +195,15 @@ header h1 {
     }
     #pacman-maze {
         height: 300px;
+        width: calc(300px / 16 * 31); 
     }
     #pac-done-icon {
-        width: 20px;
-        height: 20px;
+        width: 16px;  
+        height: 16px; 
     }
     .task-item {
-        width: 15px;
-        height: 15px;
+        width: 10px;  
+        height: 10px; 
     }
     .task-item .task-text {
         width: 180px;

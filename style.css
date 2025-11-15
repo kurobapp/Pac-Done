@@ -92,8 +92,7 @@ header h1 {
     margin: auto; 
     z-index: 10; 
     
-    /* ★変更: 右向きの口 (50% 50% = 口の奥) */
-    /* (口を大きくしたい場合は 50% 50% の 50% を小さくします) */
+    /* 右向きの口 */
     clip-path: polygon(100% 0%, 50% 50%, 100% 100%, 0% 100%, 0% 0%);
     
     border: 1px solid #FFD700;
@@ -102,22 +101,22 @@ header h1 {
     transition: transform 0.1s ease-out, clip-path 0.05s linear;
 }
 
-/* ★変更: パクパク用 (口を閉じた状態) */
+/* パクパク用 (口を閉じた状態) */
 #pac-done-icon.mouth-closed {
-    /* ★変更: 完全に閉じた円形 (clip-pathをリセット) */
+    /* 完全に閉じた円形 */
     clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%);
 }
 
 
 /* タスクアイテム（餌）コンテナ */
-#task-list.task-container {
+#task-list.task-container,
+#pac-dots-container.task-container { /* ★修正: ドットコンテナも対象に */
     display: contents;
     z-index: 1; 
 }
 
 /* タスクアイテム (餌) */
-.task-item {
-    position: absolute; 
+.task-item { 
     width: 14px;
     height: 14px;
     background-color: #FFFF00;
@@ -137,6 +136,18 @@ header h1 {
     box-shadow: 0 0 10px rgba(255, 255, 0, 1);
     z-index: 11; 
 }
+
+/* ★追加: パックマンの餌 (ドット) */
+.pac-dot {
+    width: 6px;  /* タスクアイテムより小さく */
+    height: 6px; /* タスクアイテムより小さく */
+    background-color: #FFFFFF; /* 白いドット */
+    border-radius: 50%;
+    margin: auto; /* グリッドセルの中央に配置 */
+    z-index: 8; /* タスク(9)より下、壁(5)より上 */
+    box-sizing: border-box; 
+}
+
 
 /* ツールチップ関連 (変更なし) */
 .task-item .task-text {
@@ -204,6 +215,11 @@ header h1 {
     .task-item {
         width: 10px;  
         height: 10px; 
+    }
+    /* ★追加: ドットのレスポンシブ */
+    .pac-dot {
+        width: 4px;
+        height: 4px;
     }
     .task-item .task-text {
         width: 180px;

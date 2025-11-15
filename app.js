@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const taskList = document.getElementById('task-list'); 
     const mazeContainer = document.getElementById('pacman-maze');
     const pacDoneIcon = document.getElementById('pac-done-icon'); 
+    const pacDotsContainer = document.getElementById('pac-dots-container'); // ★追加
 
     // --- 迷路レイアウト定義 ---
     const mazeLayout = [
@@ -17,7 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
         [1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1], // 3
         [1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 0, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1], // 4
         [1, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 1], // 5
-        [1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1], // 6
+        [1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1], // 6
         [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0], // 7 (ワープ)
         [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0], // 8 (ワープ)
         [1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1], // 9
@@ -36,6 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let gameInterval = null;
     const gameSpeed = 150; // ms (150msごとに1マス進む)
     let isMouthOpen = true; 
+    let availableDots = []; // ★タスク配置用のリスト (名前はDotsだがタスク用)
 
     //迷路の壁を生成する
     const createMaze = () => {
@@ -51,17 +53,56 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         });
+        
+        // ★変更: コンテナの追加順序を整理
         if (pacDoneIcon) {
              mazeContainer.appendChild(pacDoneIcon);
         }
+        mazeContainer.appendChild(pacDotsContainer); // ★追加
         mazeContainer.appendChild(taskList);
     };
 
     /**
-     * パックマンの初期位置設定と、餌を置ける場所（道）のリストを作成 (変更なし)
+     * ★追加: 餌(ドット)を迷路に配置する関数
+     */
+    const createDots = () => {
+        // コンテナをクリア
+        pacDotsContainer.innerHTML = '';
+        
+        mazeLayout.forEach((rowArray, rowIndex) => {
+            rowArray.forEach((cellValue, colIndex) => {
+                // 道(0)の場合
+                if (cellValue === 0) {
+                    
+                    // パックマンの現在位置には生成しない
+                    if (rowIndex === pacmanPosition.row && colIndex === pacmanPosition.col) {
+                         // 何もしない
+                    } else {
+                        const dotElement = document.createElement('div');
+                        dotElement.classList.add('pac-dot');
+                        dotElement.style.gridRowStart = rowIndex + 1;
+                        dotElement.style.gridColumnStart = colIndex + 1;
+                        dotElement.dataset.row = rowIndex;
+                        dotElement.dataset.col = colIndex;
+                        pacDotsContainer.appendChild(dotElement);
+                    }
+                }
+            });
+        });
+    };
+
+
+    /**
+     * パックマンの初期位置設定と、餌を置ける場所（道）のリストを作成
+     * (★修正: createDots() の呼び出しを追加)
      */
     const initializeGame = () => {
         updatePacmanPosition(pacmanPosition.row, pacmanPosition.col, 'right'); // 初期は右向き
+
+        // ★追加: 最初のドットを生成
+        createDots();
+
+        // 利用可能なタスク配置場所のリストを作成 (変更なし)
         availableDots = [];
         mazeLayout.forEach((rowArray, rowIndex) => {
             rowArray.forEach((cellValue, colIndex) => {
@@ -224,12 +265,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // 7. 餌（タスク）との衝突判定
         checkTaskCollision(newRow, newCol);
+        
+        // ★追加: 8. 餌（ドット）との衝突判定
+        checkDotCollision(newRow, newCol);
     };
 
 
     /**
      * パックマンのDOM位置と内部状態を更新
-     * (★修正: パクパクアニメーションの切り替えを追加)
+     * (★修正: パクパクアニメーションの切り替えを追加) (変更なし)
      */
     const updatePacmanPosition = (row, col, direction) => {
         // 内部状態を更新
@@ -276,6 +320,25 @@ document.addEventListener('DOMContentLoaded', () => {
             taskToEat.remove(); 
             availableDots.push({ row: row, col: col });
             availableDots.sort(() => Math.random() - 0.5);
+        }
+    };
+
+    /**
+     * ★追加: 指定した座標の餌(ドット)を食べる処理
+     */
+    const checkDotCollision = (row, col) => {
+        // ドットコンテナから該当のドットを探す
+        const dotToEat = pacDotsContainer.querySelector(`.pac-dot[data-row="${row}"][data-col="${col}"]`);
+        
+        if (dotToEat) {
+            dotToEat.remove(); // ドットを食べる (DOMから削除)
+            
+            // ★追加: 残りのドットを確認
+            if (pacDotsContainer.childElementCount === 0) {
+                // ドットが0個になったら、再生成する
+                // (パックマンの現在位置を除く)
+                createDots();
+            }
         }
     };
 

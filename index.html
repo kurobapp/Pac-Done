@@ -4,39 +4,45 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pac-Done (Todo App)</title>
+    
     <link rel="stylesheet" href="style.css">
     
-<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 </head>
-<body>
 
+<body> 
     <header>
         <h1>Pac-Done</h1>
+        <div id="score-display">
+            SCORE: <span id="score-value">0</span>
+        </div>
     </header>
 
     <main>
         <form id="task-form">
-            <input type="text" id="task-input" placeholder="課題（タスク）を入力..." required>
+            <input type="text" id="task-input" placeholder="課題（タスク）を入力..." required autocomplete="off">
             <input type="date" id="task-deadline">
-            <button type="submit">餌を配置</button>
+            <button type="submit">タスク追加</button>
         </form>
 
         <div id="pacman-stage-container">
             <div id="pacman-maze">
-                
                 <div id="pac-done-icon"></div> 
 
-                
                 <div id="pac-dots-container" class="task-container"></div>
-                
-                
-                <div id="task-list" class="task-container">
-                    
-                </div>
+                <div id="task-list" class="task-container"></div>
             </div>
+        </div>
+
+        <div id="task-list-display">
+            <h2>ToDo List</h2>
+            <ul id="todo-list-ul">
+                </ul>
         </div>
     </main>
 
+    <script src="pacman.js"></script>
+    <script src="task.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

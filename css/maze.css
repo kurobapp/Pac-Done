@@ -1,0 +1,234 @@
+/* 迷路 */
+#pacman-maze {
+    display: grid;
+    grid-template-columns: repeat(31, 1fr); 
+    grid-template-rows: repeat(16, 1fr); 
+    gap: 0;
+    height: 450px; 
+    width: calc(450px / 16 * 31); 
+    max-width: 100%; 
+    margin: 0 auto; 
+    background-color: #000;
+    overflow: hidden; 
+    border: 2px solid #0000FF;
+}
+
+.maze-wall {
+    background-color: #0000FF;
+    border: 1px solid #0000FF;
+    box-sizing: border-box;
+    z-index: 5;
+}
+
+/* パックマン */
+#pac-done-icon {
+    position: absolute; 
+    width: 26px;
+    height: 26px;
+    background-color: #FFFF00;
+    border-radius: 50%;
+    margin: auto; 
+    z-index: 10; 
+    clip-path: polygon(100% 0%, 50% 50%, 100% 100%, 0% 100%, 0% 0%);
+    border: 1px solid #FFD700;
+    box-sizing: border-box; 
+    position: relative;
+    transition: transform 0.1s ease-out, clip-path 0.05s linear;
+}
+
+#pac-done-icon.mouth-closed {
+    clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%);
+}
+
+/* 迷路上のコンテナ */
+#task-list.task-container,
+#pac-dots-container.task-container {
+    display: contents;
+    z-index: 1; 
+}
+
+/* 迷路上のタスク（餌） */
+.task-item { 
+    width: 14px;
+    height: 14px;
+    background-color: #FFFF00;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    z-index: 9; 
+    transition: transform 0.2s, background-color 0.3s;
+    box-shadow: 0 0 5px rgba(255, 255, 0, 0.7);
+    margin: auto; 
+    box-sizing: border-box; 
+}
+
+.task-item:hover {
+    transform: scale(1.6);
+    box-shadow: 0 0 10px rgba(255, 255, 0, 1);
+    z-index: 11; 
+}
+
+/* 迷路上のドット */
+.pac-dot {
+    width: 6px;
+    height: 6px;
+    background-color: #FFFFFF;
+    border-radius: 50%;
+    margin: auto;
+    z-index: 8;
+    box-sizing: border-box; 
+}
+
+/* ツールチップ (迷路上のタスク用) */
+.task-item .task-text {
+    visibility: hidden;
+    width: 220px;
+    background-color: rgba(34, 34, 34, 0.9);
+    color: #fff;
+    text-align: left;
+    border: 1px solid #FFFF00;
+    padding: 10px;
+    border-radius: 8px;
+    position: absolute;
+    z-index: 10;
+    bottom: 150%;
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0;
+    transition: opacity 0.3s, bottom 0.3s;
+    pointer-events: none;
+    font-family: 'Arial', sans-serif;
+    font-size: 0.8em;
+    line-height: 1.4;
+}
+
+.task-item .task-text::before {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -8px;
+    border-width: 8px;
+    border-style: solid;
+    border-color: #FFFF00 transparent transparent transparent;
+}
+
+.task-item .task-deadline {
+    font-size: 0.9em;
+    color: #FFB8FF;
+    display: block;
+    margin-top: 5px;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    padding-top: 5px;
+}
+
+.task-item:hover .task-text {
+    visibility: visible;
+    opacity: 1;
+    bottom: 120%;
+}
+
+/* ゴーストのスタイル */
+.ghost {
+    width: 26px;
+    height: 26px;
+    position: relative; 
+    margin: auto;
+    z-index: 9; 
+    border-top-left-radius: 50%;
+    border-top-right-radius: 50%;
+    clip-path: polygon(
+        0% 0%, 100% 0%, 
+        100% 80%, 
+        80% 100%, 
+        60% 80%, 
+        40% 100%, 
+        20% 80%, 
+        0% 80%
+    );
+    display: none; 
+    transition: background-color 0.1s; 
+}
+.ghost .eyes {
+    position: absolute;
+    top: 25%;
+    width: 100%;
+    display: flex;
+    justify-content: space-evenly;
+    z-index: 10;
+}
+.ghost .eye {
+    width: 8px;
+    height: 8px;
+    background-color: #fff;
+    border-radius: 50%;
+    position: relative; 
+    overflow: hidden; 
+}
+.ghost .pupil {
+    width: 4px;
+    height: 4px; 
+    background-color: #000; 
+    border-radius: 50%; 
+    position: absolute; 
+    top: 50%; 
+    left: 100%; 
+    transform: translate(-100%, -50%);
+    transition: transform 0.1s, left 0.1s, background-color 0.1s;
+}
+
+.ghost.frightened .pupil {
+    display: none;
+}
+.ghost.blinky { background-color: #FF0000; } 
+.ghost.pinky { background-color: #FFB8FF; } 
+.ghost.inky { background-color: #00FFFF; } 
+.ghost.clyde { background-color: #FFB851; }
+.ghost.sue { background-color: #DA70D6; } /* (紫) */
+.ghost.funky { background-color: #32CD32; } /* (緑) */
+.ghost.spunky { background-color: #8A2BE2; } /* (青紫) */
+.ghost.tim { background-color: #A0522D; } /* (茶) */
+.ghost.frightened {
+    background-color: #0000FF;
+    animation: none;
+}
+
+
+/* レスポンシブ (迷路関連) */
+@media (max-width: 768px) {
+    #pacman-maze {
+        height: 300px;
+        width: calc(300px / 16 * 31); 
+    }
+    #pac-done-icon {
+        width: 16px;  
+        height: 16px; 
+    }
+    .task-item {
+        width: 10px;  
+        height: 10px; 
+    }
+    .pac-dot {
+        width: 4px;
+        height: 4px;
+    }
+    .task-item .task-text {
+        width: 180px;
+        font-size: 0.7em;
+        padding: 8px;
+    }
+    .ghost {
+        width: 16px;
+        height: 16px;
+    }
+    .ghost .eye {
+        width: 5px;
+        height: 5px;
+    }
+    .ghost .pupil {
+        width: 2px;
+        height: 2px;
+    }
+}

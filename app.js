@@ -1,3 +1,5 @@
+// app.js の内容
+
 document.addEventListener('DOMContentLoaded', () => {
 
     const scoreValueElement = document.getElementById('score-value');
@@ -10,15 +12,15 @@ document.addEventListener('DOMContentLoaded', () => {
         tasks: [], 
         mazeFeeds: [],
         score: 0,
-        ghosts: [] // ロード/保存専用のデータとして使う
+        ghosts: [] 
     };
 
-    // --- 保存・読み込み機能 ---
+    // (saveData, loadData は変更なし)
+    // ...
     const saveData = () => {
         if (!window.pacmanGame || !window.pacmanGame.getGhostsState) {
             return;
         }
-
         const dataToSave = {
             tasks: sharedState.tasks,
             mazeFeeds: sharedState.mazeFeeds,
@@ -27,7 +29,6 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
     };
-
     const loadData = () => {
         const loadedData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || { tasks: [], mazeFeeds: [], score: 0, ghosts: [] };
         sharedState.tasks = loadedData.tasks;
@@ -35,8 +36,6 @@ document.addEventListener('DOMContentLoaded', () => {
         sharedState.score = loadedData.score || 0;
         sharedState.ghosts = loadedData.ghosts || []; 
     };
-
-    // --- スコア管理機能 ---
     const SCORE_LIMIT = 99999990; 
     const updateScoreUI = () => {
         if (scoreValueElement) {
@@ -53,28 +52,42 @@ document.addEventListener('DOMContentLoaded', () => {
         saveData(); 
     };
 
+    // ★★★ 期限切れ判定関数を追加 ★★★
+    const getDeadlineStatus = (deadlineString) => {
+        if (!deadlineString) return 'none';
+        const today = new Date(); today.setHours(0, 0, 0, 0);
+        // JSTで判定
+        const deadline = new Date(deadlineString + 'T00:00:00+09:00'); 
+        if (isNaN(deadline.getTime())) return 'none';
+
+        const diffTime = deadline.getTime() - today.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        if (diffDays < 0) return 'overdue'; // 期限切れ
+        if (diffDays === 0 || diffDays === 1) return 'danger';
+        if (diffDays === 2) return 'near';
+        return 'none';
+    };
+
     // --- コールバック定義 ---
     const handleDotCollision = () => { addScore(10); };
     const handleClearScreen = () => { addScore(350); };
     const handleTaskDataChange = () => { saveData(); };
 
+    // ★★★ handleTaskAdded を修正 (isOverdue を渡す) ★★★
     const handleTaskAdded = (newTask) => {
-        const GHOST_TYPES = ['blinky', 'pinky', 'inky', 'clyde'];
-        
+        const GHOST_TYPES = ['blinky', 'pinky', 'inky', 'clyde', 'sue', 'funky', 'spunky', 'tim'];
         const activeGhostCount = (window.pacmanGame && window.pacmanGame.getGhostsState) 
                                  ? window.pacmanGame.getGhostsState().length : 0;
-
         if (activeGhostCount >= GHOST_TYPES.length) {
-            alert("ゴーストの最大数(4体)に達しています。");
+            alert("ゴーストの最大数(8体)に達しています。");
             return false;
         }
-        
         const existingTypes = new Set(
             (window.pacmanGame && window.pacmanGame.getGhostsState) 
             ? window.pacmanGame.getGhostsState().map(g => g.type) 
             : []
         );
-
         let newGhostType = null;
         for (const type of GHOST_TYPES) {
             if (!existingTypes.has(type)) {
@@ -82,16 +95,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 break;
             }
         }
-
         if (!newGhostType) {
              alert("ゴーストの空きタイプが見つかりません。");
              return false;
         }
-        
+
+        // 期限切れフラグを判定
+        const isOverdue = (getDeadlineStatus(newTask.deadline) === 'overdue');
+
         if (window.pacmanGame && window.pacmanGame.spawnGhost) {
-            window.pacmanGame.spawnGhost(newTask.id, newGhostType);
+            // isOverdue を渡す
+            window.pacmanGame.spawnGhost(newTask.id, newGhostType, 'NORMAL', isOverdue);
         }
-        
         return true; 
     };
 
@@ -99,6 +114,17 @@ document.addEventListener('DOMContentLoaded', () => {
         addScore(10000); 
     };
 
+    // (handleCaught, handleTaskDeleted は変更なし)
+    // ...
+    const handleCaught = () => {
+        alert("ゴーストに捕まった！");
+        sharedState.score = 0;
+        updateScoreUI();
+        if (window.pacmanGame && window.pacmanGame.resetGamePositions) {
+            window.pacmanGame.resetGamePositions();
+        }
+        saveData();
+    };
     const handleTaskDeleted = (taskId) => {
         if (window.pacmanGame && window.pacmanGame.removeGhost) {
             window.pacmanGame.removeGhost(taskId);
@@ -118,30 +144,23 @@ document.addEventListener('DOMContentLoaded', () => {
         loadData();
         updateScoreUI();
         
-        // ★★★ 修正箇所 ★★★
-        // データの整合性チェック (filter処理を削除)
-        // 
-        // 削除理由: 
-        // saveData() の時点で、削除すべきゴーストは既に除外されたリストが保存されているため、
-        // loadData() で読み込んだ sharedState.ghosts は、フィルタリングせずに
-        // すべて復元するのが正しい。
-        //
-        // (旧コード: sharedState.ghosts = sharedState.ghosts.filter(...);)
-        // ★★★ 修正ここまで ★★★
-        
-        // (タスクDOMの描画)
+        // (データの整合性チェック, DOM描画 は変更なし)
+        // ...
         window.taskLogic.renderAll(); 
-        
         const occupiedPositions = new Set();
         sharedState.mazeFeeds.forEach(feed => {
             occupiedPositions.add(`${feed.row},${feed.col}`);
         });
 
-        // ロードしたゴーストを 'state' 付きで再配置
-        // (フィルタリングされなくなったため、イジケ/食べられ状態でも復元される)
+        // ★★★ ゴースト再配置処理を修正 (isOverdue を渡す) ★★★
         sharedState.ghosts.forEach(ghost => {
             if (window.pacmanGame.spawnGhost) {
-                window.pacmanGame.spawnGhost(ghost.id, ghost.type, ghost.state);
+                // 該当タスクを探して期限切れか判定
+                const correspondingTask = sharedState.tasks.find(t => t.id === ghost.id);
+                const deadline = correspondingTask ? correspondingTask.deadline : null;
+                const isOverdue = (getDeadlineStatus(deadline) === 'overdue');
+                
+                window.pacmanGame.spawnGhost(ghost.id, ghost.type, ghost.state, isOverdue);
             }
         });
 
@@ -151,6 +170,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         // --- コールバック設定 ---
+        // (変更なし)
+        // ...
         window.pacmanGame.setTaskCollisionCallback((row, col) => {
             const eatenTaskId = window.taskLogic.checkTaskCollision(row, col);
             if (eatenTaskId) {
@@ -161,6 +182,7 @@ document.addEventListener('DOMContentLoaded', () => {
         window.pacmanGame.setDotCollisionCallback(handleDotCollision);
         window.pacmanGame.setClearScreenCallback(handleClearScreen);
         window.pacmanGame.setGhostEatenCallback(handleGhostEaten);
+        window.pacmanGame.setCaughtCallback(handleCaught);
 
     } else {
         console.error("ロジックファイルの読み込みに失敗しました。");

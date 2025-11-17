@@ -1,0 +1,229 @@
+/* タスク追加フォーム */
+#task-form {
+    margin-bottom: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+#task-form input {
+    background-color: #333;
+    color: #fff;
+    border: 2px solid #00FFFF;
+    padding: 12px;
+    margin: 0;
+    border-radius: 5px;
+    font-family: 'Press+Start+2P', cursive;
+    font-size: 0.8em;
+}
+#task-form button {
+    background-color: #FFFF00;
+    color: #111;
+    border: none;
+    padding: 12px 20px;
+    cursor: pointer;
+    font-weight: bold;
+    font-family: 'Press+Start+2P', cursive;
+    font-size: 0.8em;
+    border-radius: 5px;
+    transition: background-color 0.3s, transform 0.2s;
+    margin: 0;
+}
+#task-form button:hover {
+    background-color: #FFD700;
+    transform: translateY(-2px);
+}
+#task-form input:focus,
+#task-form input:focus-visible {
+    outline: none;
+    border-color: #00FFFF;
+}
+input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1); 
+    cursor: pointer;
+    font-size: 1.2em; 
+}
+#task-deadline::-webkit-datetime-edit-text {
+    color: #aaa; 
+    padding: 0 2px;
+}
+#task-deadline::-webkit-datetime-edit-year-field,
+#task-deadline::-webkit-datetime-edit-month-field,
+#task-deadline::-webkit-datetime-edit-day-field {
+    color: #fff;
+}
+#task-deadline::-webkit-datetime-edit-year-field:focus,
+#task-deadline::-webkit-datetime-edit-month-field:focus,
+#task-deadline::-webkit-datetime-edit-day-field:focus {
+    background-color: #555; 
+    color: #fff;           
+    outline: none;          
+}
+#task-deadline::selection {
+    background-color: #555;
+    color: #fff;
+}
+#task-deadline::-moz-selection {
+    background-color: #555;
+    color: #fff;
+}
+
+/* ToDoリスト */
+#task-list-display {
+    width: 80%;
+    max-width: 880px;
+    margin: 40px auto;
+    background-color: #000;
+    border: 2px solid #00FFFF;
+    padding: 20px;
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
+}
+#task-list-display h2 {
+    color: #FFFF00;
+    text-shadow: 2px 2px #FF0000;
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-size: 1.5em;
+    border-bottom: 2px dashed #00FFFF;
+    padding-bottom: 10px;
+}
+#todo-list-ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    text-align: left;
+}
+#todo-list-ul li {
+    background-color: #222;
+    padding: 15px;
+    margin-bottom: 10px;
+    border-left: 5px solid #FFFF00;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap; 
+    gap: 10px; 
+    font-size: 0.9em;
+    font-family: Arial, sans-serif;
+}
+#todo-list-ul .task-info {
+    flex-grow: 1;
+    min-width: 200px; 
+}
+#todo-list-ul .task-name {
+    display: block;
+    font-size: 1.1em;
+    font-weight: bold;
+    color: #eee;
+}
+#todo-list-ul .task-deadline-text {
+    display: block;
+    font-size: 0.9em;
+    color: #FFB8FF; 
+    margin-top: 5px;
+}
+#todo-list-ul li.deadline-near {
+    background-color: #333300; 
+    border-left-color: #FFFF00; 
+}
+#todo-list-ul li.deadline-danger {
+    background-color: #330000; 
+    border-left-color: #FF0000; 
+    animation: blink-warning 1.5s infinite ease-in-out;
+}
+.task-actions {
+    display: flex;
+    align-items: center;
+    gap: 5px; 
+    flex-shrink: 0; 
+}
+#todo-list-ul .complete-btn {
+    background-color: #FF0000;
+    color: #fff;
+    border: none;
+    padding: 8px 12px;
+    cursor: pointer;
+    font-family: 'Press+Start+2P', cursive;
+    font-size: 0.7em;
+    margin-left: 0;
+    transition: background-color 0.3s, transform 0.2s;
+}
+#todo-list-ul .complete-btn:hover {
+    background-color: #ff4d4d;
+    transform: scale(1.05);
+}
+
+/* 編集・削除メニュー */
+.menu-container {
+    position: relative; 
+    display: inline-block;
+}
+.menu-btn {
+    background: none;
+    border: none;
+    color: #eee;
+    font-size: 1.5em; 
+    padding: 0 8px;
+    cursor: pointer;
+    line-height: 1; 
+}
+.menu-btn:hover {
+    color: #FFFF00;
+}
+.menu-dropdown {
+    display: none; 
+    position: absolute;
+    right: 0; 
+    top: 100%; 
+    background-color: #333;
+    border: 1px solid #FFFF00;
+    border-radius: 4px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    z-index: 100;
+    width: 120px; 
+}
+.menu-dropdown.show {
+    display: block;
+}
+.menu-dropdown-btn {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    background: none;
+    border: none;
+    color: #eee;
+    text-align: left;
+    cursor: pointer;
+    font-family: Arial, sans-serif;
+    font-size: 0.9em;
+}
+.menu-dropdown-btn:hover {
+    background-color: #444;
+    color: #FFFF00;
+}
+.menu-dropdown-btn.delete-btn {
+    color: #FF6B6B;
+}
+.menu-dropdown-btn.delete-btn:hover {
+    background-color: #550000;
+    color: #FF6B6B;
+}
+
+/* アニメーション */
+@keyframes blink-warning {
+    0%, 100% {
+        box-shadow: 0 0 5px rgba(255, 0, 0, 0.3);
+    }
+    50% {
+        box-shadow: 0 0 15px rgba(255, 0, 0, 0.8);
+    }
+}
+
+/* レスポンシブ (UI関連) */
+@media (max-width: 768px) {
+    #task-form input, #task-form button {
+        font-size: 0.7em;
+        padding: 10px;
+    }
+}

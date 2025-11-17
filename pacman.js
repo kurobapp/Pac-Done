@@ -4,13 +4,13 @@
  */
 function initializePacmanGame(sharedState) {
 
-    // (DOM要素)
+    // (DOM要素, 迷路レイアウト, ゲーム状態, コールバック, ゴースト関連 は変更なし)
+    // ...
     const mazeContainer = document.getElementById('pacman-maze');
     const pacDoneIcon = document.getElementById('pac-done-icon');
     const pacDotsContainer = document.getElementById('pac-dots-container');
     const taskList = document.getElementById('task-list');
 
-    // (迷路レイアウト)
     const mazeLayout = [
         [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
         [1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
@@ -30,7 +30,6 @@ function initializePacmanGame(sharedState) {
         [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
     ];
 
-    // (ゲーム状態, コールバック)
     let currentDirection = null;
     let requestedDirection = null;
     let gameInterval = null;
@@ -40,17 +39,21 @@ function initializePacmanGame(sharedState) {
     let onDotCollision = () => {}; 
     let onClearScreen = () => {}; 
     let onGhostEaten = (ghost) => {}; 
+    let onCaught = () => {}; 
 
-    // (ゴースト関連)
-    let ghosts = {}; // pacman.js 内部で管理するゴーストのフルオブジェクト
+    let ghosts = {}; 
     const ghostStartPositions = [
         { type: 'blinky', row: 7, col: 15 },
-        { type: 'pinky',  row: 7, col: 14 },
-        { type: 'inky',   row: 7, col: 16 },
-        { type: 'clyde',  row: 7, col: 13 }
+        { type: 'pinky',  row: 1, col: 4 },
+        { type: 'inky',   row: 3, col: 28 },
+        { type: 'clyde',  row: 13, col: 29 },
+        { type: 'sue',    row: 1, col: 10 }, 
+        { type: 'funky',  row: 8, col: 21 },
+        { type: 'spunky', row: 7, col: 3 },
+        { type: 'tim',    row: 8, col: 15 }
     ];
 
-    // (createMaze, createDots, updateGhostPosition, updatePacmanPosition, initializeGamePositions は変更なし)
+    // (createMaze, createDots, updateGhostPosition, updatePacmanPosition は変更なし)
     // ...
     const createMaze = () => {
         mazeContainer.innerHTML = '';
@@ -111,8 +114,35 @@ function initializePacmanGame(sharedState) {
         }
         pacDoneIcon.style.transform = rotation;
     };
+
+    // (リセット用関数, initializeGamePositions, キー入力, ループ制御, 衝突判定 は変更なし)
+    // ...
+    const resetPacmanPosition = () => {
+        const startRow = 12; 
+        const startCol = 1;
+        sharedState.pacmanPosition.row = startRow;
+        sharedState.pacmanPosition.col = startCol;
+        updatePacmanPosition(startRow, startCol, 'right');
+        currentDirection = null;
+        requestedDirection = null;
+        stopPacman();
+    };
+    const resetAllGhostsPosition = () => {
+        Object.values(ghosts).forEach(ghost => {
+            const startPos = ghostStartPositions.find(p => p.type === ghost.type);
+            if (startPos) {
+                ghost.row = startPos.row;
+                ghost.col = startPos.col;
+                ghost.state = 'NORMAL';
+                ghost.lastMove = null;
+                ghost.element.classList.remove('frightened');
+                ghost.element.style.display = 'block';
+                updateGhostPosition(ghost);
+            }
+        });
+    };
     const initializeGamePositions = () => {
-        updatePacmanPosition(sharedState.pacmanPosition.row, sharedState.pacmanPosition.col, 'right');
+        resetPacmanPosition();
         Object.values(ghosts).forEach(ghost => {
             updateGhostPosition(ghost);
         });
@@ -129,9 +159,6 @@ function initializePacmanGame(sharedState) {
         });
         sharedState.availableDots.sort(() => Math.random() - 0.5);
     };
-
-    // (キー入力リスナー, startGameLoop, stopPacman, isWall, handleDirectionChange は変更なし)
-    // ...
     document.addEventListener('keydown', (e) => {
         if (document.activeElement.id === 'task-input' || document.activeElement.id === 'task-deadline' || document.activeElement.tagName === 'INPUT') {
             return;
@@ -192,12 +219,8 @@ function initializePacmanGame(sharedState) {
             requestedDirection = null;
         }
     };
-    
-    // (checkDotCollision, checkGhostCollision, gameLoop は変更なし)
-    // ...
     const checkDotCollision = (row, col) => {
         const dotToEat = pacDotsContainer.querySelector(`.pac-dot[data-row="${row}"][data-col="${col}"]`);
-        
         if (dotToEat) {
             dotToEat.remove();
             onDotCollision(); 
@@ -214,10 +237,153 @@ function initializePacmanGame(sharedState) {
             if (ghost.row === pacPos.row && ghost.col === pacPos.col) {
                 if (ghost.state === 'FRIGHTENED') {
                     eatGhost(ghost);
-                } 
+                    return true; 
+                } else if (ghost.state === 'NORMAL') {
+                    onCaught(); 
+                    return true; 
+                }
             }
         }
+        return false; 
     };
+
+    // (ゴーストAI関連: getDistance, findBestMove は変更なし)
+    // ...
+    const getDistance = (row1, col1, row2, col2) => {
+        const mazeHeight = mazeLayout.length;
+        const mazeWidth = mazeLayout[0].length;
+        const dy = row2 - row1;
+        const dx = col2 - col1;
+        const distY = Math.abs(dy);
+        const distX = Math.abs(dx);
+        let effectiveDistY = distY;
+        let effectiveDistX = distX;
+        if (row1 === 7 || row1 === 8) {
+            const warpDistX = mazeWidth - distX;
+            effectiveDistX = Math.min(distX, warpDistX);
+        }
+        if (col1 === 10 || col1 === 11 || col1 === 19 || col1 === 20) {
+            const warpDistY = mazeHeight - distY;
+            effectiveDistY = Math.min(distY, warpDistY);
+        }
+        return (effectiveDistX * effectiveDistX) + (effectiveDistY * effectiveDistY);
+    };
+    const findBestMove = (ghost, targetRow, targetCol, flee = false) => {
+        const directions = [
+            { name: 'up',    dr: -1, dc:  0 },
+            { name: 'down',  dr:  1, dc:  0 },
+            { name: 'left',  dr:  0, dc: -1 },
+            { name: 'right', dr:  0, dc:  1 }
+        ];
+        const oppositeMove = {
+            'up': 'down', 'down': 'up', 'left': 'right', 'right': 'left'
+        };
+        const lastMove = ghost.lastMove;
+        let bestMove = null;
+        let bestDistance = flee ? -Infinity : Infinity; 
+        const possibleMoves = directions.filter(dir => {
+            if (dir.name === oppositeMove[lastMove]) {
+                return false; 
+            }
+            let nextRow = ghost.row + dir.dr;
+            let nextCol = ghost.col + dir.dc;
+            if (nextRow === 7 || nextRow === 8) {
+                if (nextCol < 0) nextCol = mazeLayout[0].length - 1;
+                else if (nextCol >= mazeLayout[0].length) nextCol = 0;
+            }
+            if (nextCol === 10 || nextCol === 11 || nextCol === 19 || nextCol === 20) {
+                if (nextRow < 0) nextRow = mazeLayout.length - 1;
+                else if (nextRow >= mazeLayout.length) nextRow = 0;
+            }
+            return !isWall(nextRow, nextCol);
+        });
+        let movesToConsider = possibleMoves;
+        if (possibleMoves.length === 0 && lastMove && oppositeMove[lastMove]) {
+            const reverseDir = directions.find(d => d.name === oppositeMove[lastMove]);
+            if (reverseDir) {
+                let nextRow = ghost.row + reverseDir.dr;
+                let nextCol = ghost.col + reverseDir.dc;
+                if (nextRow === 7 || nextRow === 8) {
+                    if (nextCol < 0) nextCol = mazeLayout[0].length - 1;
+                    else if (nextCol >= mazeLayout[0].length) nextCol = 0;
+                }
+                if (nextCol === 10 || nextCol === 11 || nextCol === 19 || nextCol === 20) {
+                    if (nextRow < 0) nextRow = mazeLayout.length - 1;
+                    else if (nextRow >= mazeLayout.length) nextRow = 0;
+                }
+                if (!isWall(nextRow, nextCol)) {
+                    movesToConsider = [reverseDir];
+                }
+            }
+        }
+        if (movesToConsider.length === 0) {
+            return null;
+        }
+        movesToConsider.forEach(dir => {
+            let nextRow = ghost.row + dir.dr;
+            let nextCol = ghost.col + dir.dc;
+            if (nextRow === 7 || nextRow === 8) {
+                if (nextCol < 0) nextCol = mazeLayout[0].length - 1;
+                else if (nextCol >= mazeLayout[0].length) nextCol = 0;
+            }
+            if (nextCol === 10 || nextCol === 11 || nextCol === 19 || nextCol === 20) {
+                if (nextRow < 0) nextRow = mazeLayout.length - 1;
+                else if (nextRow >= mazeLayout.length) nextRow = 0;
+            }
+            const distance = getDistance(nextRow, nextCol, targetRow, targetCol);
+            if (flee) {
+                if (distance > bestDistance) {
+                    bestDistance = distance;
+                    bestMove = { row: nextRow, col: nextCol, name: dir.name };
+                }
+            } else {
+                if (distance < bestDistance) {
+                    bestDistance = distance;
+                    bestMove = { row: nextRow, col: nextCol, name: dir.name };
+                }
+            }
+        });
+        return bestMove;
+    };
+
+    /**
+     * ★★★ 2倍速処理を追加 ★★★
+     */
+    const moveGhosts = () => {
+        const targetRow = sharedState.pacmanPosition.row;
+        const targetCol = sharedState.pacmanPosition.col;
+
+        Object.values(ghosts).forEach(ghost => {
+            if (ghost.state === 'FRIGHTENED' || ghost.state === 'EATEN') {
+                return; // このゴーストの移動処理をスキップ
+            }
+
+            // ★ 1回目の移動（全ゴースト共通）
+            const bestMove1 = findBestMove(ghost, targetRow, targetCol, false);
+            if (bestMove1) {
+                ghost.row = bestMove1.row;
+                ghost.col = bestMove1.col;
+                ghost.lastMove = bestMove1.name; 
+                updateGhostPosition(ghost); 
+            }
+
+            // ★ 2回目の移動（期限切れゴーストのみ）
+            if (ghost.isOverdue) {
+                // 1回目の移動後の現在地から、再度最適な移動先を計算
+                const bestMove2 = findBestMove(ghost, targetRow, targetCol, false);
+                if (bestMove2) {
+                    ghost.row = bestMove2.row;
+                    ghost.col = bestMove2.col;
+                    ghost.lastMove = bestMove2.name; 
+                    updateGhostPosition(ghost); 
+                }
+            }
+        });
+    };
+
+
+    // (gameLoop, eatGhost, 初期化実行 は変更なし)
+    // ...
     const gameLoop = () => {
         if (!currentDirection) {
             if (requestedDirection) {
@@ -247,7 +413,7 @@ function initializePacmanGame(sharedState) {
         }
         if ((newCol === 10 || newCol === 11 || newCol === 19 || newCol === 20)) {
             if (newRow < 0) newRow = mazeLayout.length - 1;
-            else if (newRow >= mazeLayout.length) newCol = 0;
+            else if (newRow >= mazeLayout.length) newRow = 0;
         }
         if (isWall(newRow, newCol)) {
             currentDirection = null;
@@ -257,34 +423,22 @@ function initializePacmanGame(sharedState) {
         updatePacmanPosition(newRow, newCol, currentDirection);
         onTaskCollision(newRow, newCol);
         checkDotCollision(newRow, newCol);
+        if (checkGhostCollision()) {
+            return; 
+        }
+        moveGhosts(); 
         checkGhostCollision();
     };
-
-    /**
-     * ★★★ 変更箇所 ★★★
-     * ゴーストを食べる処理
-     * (状態を EATEN にせず、データごと削除する)
-     */
     const eatGhost = (ghost) => {
-        // ghost.state = 'EATEN'; // ← 削除
-        
-        // 1. DOM要素を画面から完全に削除
         if (ghost.element) {
             ghost.element.remove();
         }
-
-        // 2. 内部の管理リストからゴーストを削除
         const ghostId = ghost.id;
         if (ghosts[ghostId]) {
             delete ghosts[ghostId];
         }
-        
-        onGhostEaten(ghost); // app.js に通知 (saveDataトリガー)
+        onGhostEaten(ghost);
     };
-    // ★★★ 変更ここまで ★★★
-
-
-    // --- 初期化実行 ---
     createMaze();
     initializeGamePositions();
     
@@ -294,27 +448,24 @@ function initializePacmanGame(sharedState) {
         setDotCollisionCallback: (callback) => { onDotCollision = callback; },
         setClearScreenCallback: (callback) => { onClearScreen = callback; },
         setGhostEatenCallback: (callback) => { onGhostEaten = callback; },
+        setCaughtCallback: (callback) => { onCaught = callback; }, 
 
         /**
-         * ★変更: initialState を受け取り、ロードに対応
+         * ★★★ 引数に isOverdue を追加 ★★★
+         * ゴーストを生成し、当たり判定リストに登録する
          */
-        spawnGhost: (taskId, ghostType, initialState = 'NORMAL') => {
+        spawnGhost: (taskId, ghostType, initialState = 'NORMAL', isOverdue = false) => {
             if (!ghostType) {
                 console.error("無効なゴーストタイプ:", ghostType);
                 return;
             }
-            // 既に内部リストに存在する場合は生成しない (ロード時の重複防止)
             if (ghosts[taskId]) {
-                return ghosts[taskId]; // 既存のゴーストを返す
+                return ghosts[taskId]; 
             }
-            
             const startPos = ghostStartPositions.find(p => p.type === ghostType);
             if (!startPos) return; 
-
-            // 1. DOM要素の動的生成
             const ghostElement = document.createElement('div');
             ghostElement.classList.add('ghost', ghostType);
-            // (目の生成)
             const eyes = document.createElement('div');
             eyes.classList.add('eyes');
             const eye1 = document.createElement('div');
@@ -330,49 +481,43 @@ function initializePacmanGame(sharedState) {
             eyes.appendChild(eye1);
             eyes.appendChild(eye2);
             ghostElement.appendChild(eyes);
-
-            // 3. 迷路コンテナに追加
             mazeContainer.appendChild(ghostElement);
-
-            // 4. 内部状態の作成
+            
             const newGhost = {
                 id: taskId,
                 type: ghostType,
                 element: ghostElement,
                 row: startPos.row,
                 col: startPos.col,
-                state: initialState // ★引数で受け取った状態を設定
+                state: initialState,
+                lastMove: null,
+                isOverdue: isOverdue // ★★★ プロパティを追加 ★★★
             };
+            
             ghosts[taskId] = newGhost;
 
-            // 5. ★ロードされた状態に基づいてDOMを調整
             if (initialState === 'FRIGHTENED') {
                 ghostElement.classList.add('frightened');
             } else if (initialState === 'EATEN') {
-                ghostElement.style.display = 'none'; // 食べられていたら非表示
+                ghostElement.style.display = 'none'; 
             }
-            
-            // EATEN 状態でなければ初期位置に配置
             if (initialState !== 'EATEN') {
                 updateGhostPosition(newGhost);
             }
-
             return newGhost;
         },
 
+        // (setGhostFrightened, removeGhost, resetEatenGhost, resetGamePositions, getGhostsState は変更なし)
+        // ...
         setGhostFrightened: (taskId) => {
             const ghost = ghosts[taskId];
             if (!ghost || ghost.state === 'EATEN') return; 
-            
-            // 状態が既に FRIGHTENED でなければ更新
             if (ghost.state !== 'FRIGHTENED') {
                 ghost.state = 'FRIGHTENED';
                 ghost.element.classList.add('frightened');
                 ghost.element.classList.remove('blinking');
-                // (app.js側が saveData を呼ぶ)
             }
         },
-
         removeGhost: (taskId) => {
             const ghost = ghosts[taskId];
             if (ghost) {
@@ -382,30 +527,22 @@ function initializePacmanGame(sharedState) {
                 delete ghosts[taskId];
             }
         },
-
-        /**
-         * ★変更: 状態を NORMAL に戻す
-         */
         resetEatenGhost: (ghost) => {
              const startPos = ghostStartPositions.find(p => p.type === ghost.type);
-             // ★ghost.id で内部リスト(ghosts)を再検索
              const internalGhost = ghosts[ghost.id];
-
-             if (startPos && internalGhost) { // 削除されてないか確認
+             if (startPos && internalGhost) { 
                 internalGhost.row = startPos.row;
                 internalGhost.col = startPos.col;
-                internalGhost.state = 'NORMAL'; // ★状態を NORMAL に
+                internalGhost.state = 'NORMAL'; 
                 internalGhost.element.classList.remove('frightened');
-                internalGhost.element.style.display = 'block'; // 再表示
-                updateGhostPosition(internalGhost); // 位置をリセット
-                
-                // (app.js 側が saveData を呼ぶ)
+                internalGhost.element.style.display = 'block'; 
+                updateGhostPosition(internalGhost); 
              }
         },
-
-        /**
-         * ★追加: 現在のゴースト状態(ID, Type, State)を保存用に返す
-         */
+        resetGamePositions: () => {
+            resetPacmanPosition();
+            resetAllGhostsPosition();
+        },
         getGhostsState: () => {
             return Object.values(ghosts).map(ghost => ({
                 id: ghost.id,

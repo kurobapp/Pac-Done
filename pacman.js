@@ -1,16 +1,16 @@
 /**
- * パックマンゲームのロジックを初期化します。
- * @param {object} sharedState - 共有状態オブジェクト
+ * パックマンゲームロジック初期化
+ * @param {object} sharedState 共有状態
  */
 function initializePacmanGame(sharedState) {
 
-    // (DOM要素, 迷路レイアウト, ゲーム状態, コールバック, ゴースト関連 は変更なし)
-    // ...
+    // --- DOM要素 ---
     const mazeContainer = document.getElementById('pacman-maze');
     const pacDoneIcon = document.getElementById('pac-done-icon');
     const pacDotsContainer = document.getElementById('pac-dots-container');
     const taskList = document.getElementById('task-list');
 
+    // --- 迷路レイアウト (1=壁, 0=通路) ---
     const mazeLayout = [
         [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
         [1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
@@ -30,17 +30,12 @@ function initializePacmanGame(sharedState) {
         [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
     ];
 
+    // --- ゲーム状態 ---
     let currentDirection = null;
     let requestedDirection = null;
     let gameInterval = null;
     const gameSpeed = 150; 
     let isMouthOpen = true;
-    let onTaskCollision = (row, col) => {}; 
-    let onDotCollision = () => {}; 
-    let onClearScreen = () => {}; 
-    let onGhostEaten = (ghost) => {}; 
-    let onCaught = () => {}; 
-
     let ghosts = {}; 
     const ghostStartPositions = [
         { type: 'blinky', row: 7, col: 15 },
@@ -52,9 +47,15 @@ function initializePacmanGame(sharedState) {
         { type: 'spunky', row: 7, col: 3 },
         { type: 'tim',    row: 8, col: 15 }
     ];
+    
+    // --- コールバック (app.jsで設定) ---
+    let onTaskCollision = (row, col) => {}; 
+    let onDotCollision = () => {}; 
+    let onClearScreen = () => {}; 
+    let onGhostEaten = (ghost) => {}; 
+    let onCaught = () => {}; 
 
-    // (createMaze, createDots, updateGhostPosition, updatePacmanPosition は変更なし)
-    // ...
+    // --- DOM描画・更新 ---
     const createMaze = () => {
         mazeContainer.innerHTML = '';
         mazeLayout.forEach((rowArray, rowIndex) => {
@@ -115,8 +116,7 @@ function initializePacmanGame(sharedState) {
         pacDoneIcon.style.transform = rotation;
     };
 
-    // (リセット用関数, initializeGamePositions, キー入力, ループ制御, 衝突判定 は変更なし)
-    // ...
+    // --- ゲーム制御・リセット ---
     const resetPacmanPosition = () => {
         const startRow = 12; 
         const startCol = 1;
@@ -127,6 +127,8 @@ function initializePacmanGame(sharedState) {
         requestedDirection = null;
         stopPacman();
     };
+
+    // ゴーストの「状態と位置」を全てリセット
     const resetAllGhostsPosition = () => {
         Object.values(ghosts).forEach(ghost => {
             const startPos = ghostStartPositions.find(p => p.type === ghost.type);
@@ -141,6 +143,25 @@ function initializePacmanGame(sharedState) {
             }
         });
     };
+
+    /**
+     * ゴーストの「位置だけ」を初期位置に戻す（状態は維持）
+     */
+    const resetGhostsPositionOnly = () => {
+        Object.values(ghosts).forEach(ghost => {
+            const startPos = ghostStartPositions.find(p => p.type === ghost.type);
+            if (startPos) {
+                ghost.row = startPos.row;
+                ghost.col = startPos.col;
+                // ghost.state は変更しない
+                ghost.lastMove = null;
+                // ghost.element.classList.remove('frightened'); は実行しない
+                ghost.element.style.display = 'block';
+                updateGhostPosition(ghost);
+            }
+        });
+    };
+
     const initializeGamePositions = () => {
         resetPacmanPosition();
         Object.values(ghosts).forEach(ghost => {
@@ -159,6 +180,8 @@ function initializePacmanGame(sharedState) {
         });
         sharedState.availableDots.sort(() => Math.random() - 0.5);
     };
+    
+    // キー入力
     document.addEventListener('keydown', (e) => {
         if (document.activeElement.id === 'task-input' || document.activeElement.id === 'task-deadline' || document.activeElement.tagName === 'INPUT') {
             return;
@@ -178,6 +201,8 @@ function initializePacmanGame(sharedState) {
             }
         }
     });
+
+    // --- ループ制御・衝突判定 ---
     const startGameLoop = () => {
         if (gameInterval) return;
         gameLoop();
@@ -247,8 +272,7 @@ function initializePacmanGame(sharedState) {
         return false; 
     };
 
-    // (ゴーストAI関連: getDistance, findBestMove は変更なし)
-    // ...
+    // --- ゴーストAI関連 ---
     const getDistance = (row1, col1, row2, col2) => {
         const mazeHeight = mazeLayout.length;
         const mazeWidth = mazeLayout[0].length;
@@ -347,7 +371,7 @@ function initializePacmanGame(sharedState) {
     };
 
     /**
-     * ★★★ 2倍速処理を追加 ★★★
+     * ゴースト移動処理 (期限切れは2倍速)
      */
     const moveGhosts = () => {
         const targetRow = sharedState.pacmanPosition.row;
@@ -355,10 +379,10 @@ function initializePacmanGame(sharedState) {
 
         Object.values(ghosts).forEach(ghost => {
             if (ghost.state === 'FRIGHTENED' || ghost.state === 'EATEN') {
-                return; // このゴーストの移動処理をスキップ
+                return; // スキップ
             }
 
-            // ★ 1回目の移動（全ゴースト共通）
+            // 1回目の移動 (共通)
             const bestMove1 = findBestMove(ghost, targetRow, targetCol, false);
             if (bestMove1) {
                 ghost.row = bestMove1.row;
@@ -367,9 +391,8 @@ function initializePacmanGame(sharedState) {
                 updateGhostPosition(ghost); 
             }
 
-            // ★ 2回目の移動（期限切れゴーストのみ）
+            // 2回目の移動 (期限切れゴーストのみ)
             if (ghost.isOverdue) {
-                // 1回目の移動後の現在地から、再度最適な移動先を計算
                 const bestMove2 = findBestMove(ghost, targetRow, targetCol, false);
                 if (bestMove2) {
                     ghost.row = bestMove2.row;
@@ -382,8 +405,7 @@ function initializePacmanGame(sharedState) {
     };
 
 
-    // (gameLoop, eatGhost, 初期化実行 は変更なし)
-    // ...
+    // --- メインゲームループ ---
     const gameLoop = () => {
         if (!currentDirection) {
             if (requestedDirection) {
@@ -421,14 +443,16 @@ function initializePacmanGame(sharedState) {
             return;
         }
         updatePacmanPosition(newRow, newCol, currentDirection);
-        onTaskCollision(newRow, newCol);
-        checkDotCollision(newRow, newCol);
-        if (checkGhostCollision()) {
+        onTaskCollision(newRow, newCol); // 餌（タスク）
+        checkDotCollision(newRow, newCol); // ドット
+        if (checkGhostCollision()) { // ゴースト（イジケ以外）
             return; 
         }
         moveGhosts(); 
-        checkGhostCollision();
+        checkGhostCollision(); // 移動後のゴースト
     };
+
+    // ゴーストを食べる処理
     const eatGhost = (ghost) => {
         if (ghost.element) {
             ghost.element.remove();
@@ -439,10 +463,12 @@ function initializePacmanGame(sharedState) {
         }
         onGhostEaten(ghost);
     };
+
+    // --- 初期化実行 ---
     createMaze();
     initializeGamePositions();
     
-    // --- 外部公開用 ---
+    // --- 外部公開用 (app.js から利用) ---
     window.pacmanGame = {
         setTaskCollisionCallback: (callback) => { onTaskCollision = callback; },
         setDotCollisionCallback: (callback) => { onDotCollision = callback; },
@@ -451,8 +477,7 @@ function initializePacmanGame(sharedState) {
         setCaughtCallback: (callback) => { onCaught = callback; }, 
 
         /**
-         * ★★★ 引数に isOverdue を追加 ★★★
-         * ゴーストを生成し、当たり判定リストに登録する
+         * ゴースト生成・登録
          */
         spawnGhost: (taskId, ghostType, initialState = 'NORMAL', isOverdue = false) => {
             if (!ghostType) {
@@ -491,7 +516,7 @@ function initializePacmanGame(sharedState) {
                 col: startPos.col,
                 state: initialState,
                 lastMove: null,
-                isOverdue: isOverdue // ★★★ プロパティを追加 ★★★
+                isOverdue: isOverdue 
             };
             
             ghosts[taskId] = newGhost;
@@ -507,8 +532,7 @@ function initializePacmanGame(sharedState) {
             return newGhost;
         },
 
-        // (setGhostFrightened, removeGhost, resetEatenGhost, resetGamePositions, getGhostsState は変更なし)
-        // ...
+        // ゴーストをイジケ状態にする
         setGhostFrightened: (taskId) => {
             const ghost = ghosts[taskId];
             if (!ghost || ghost.state === 'EATEN') return; 
@@ -518,6 +542,8 @@ function initializePacmanGame(sharedState) {
                 ghost.element.classList.remove('blinking');
             }
         },
+        
+        // ゴースト削除
         removeGhost: (taskId) => {
             const ghost = ghosts[taskId];
             if (ghost) {
@@ -527,6 +553,8 @@ function initializePacmanGame(sharedState) {
                 delete ghosts[taskId];
             }
         },
+        
+        // (未使用だが) 食べたゴーストをリセット
         resetEatenGhost: (ghost) => {
              const startPos = ghostStartPositions.find(p => p.type === ghost.type);
              const internalGhost = ghosts[ghost.id];
@@ -539,16 +567,38 @@ function initializePacmanGame(sharedState) {
                 updateGhostPosition(internalGhost); 
              }
         },
+        
+        // ゲームリセット（全体：状態と位置）
         resetGamePositions: () => {
             resetPacmanPosition();
             resetAllGhostsPosition();
         },
+
+        /**
+         * パックマンとゴーストの「位置のみ」リセット（状態は維持）
+         */
+        resetPacmanAndGhostPositions: () => {
+            resetPacmanPosition();
+            resetGhostsPositionOnly();
+        },
+        
+        // ゴースト状態取得 (保存用)
         getGhostsState: () => {
             return Object.values(ghosts).map(ghost => ({
                 id: ghost.id,
                 type: ghost.type,
                 state: ghost.state
             }));
+        },
+
+        /**
+         * ゴーストの期限切れ状態(isOverdue)を設定
+         */
+        setGhostOverdueStatus: (taskId, isOverdue) => {
+            const ghost = ghosts[taskId];
+            if (ghost) {
+                ghost.isOverdue = isOverdue;
+            }
         }
     };
 }

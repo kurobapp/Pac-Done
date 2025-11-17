@@ -1,11 +1,12 @@
 /**
- * ToDoタスク関連のロジックを初期化します。
- * @param {object} sharedState - 共有状態オブジェクト
- * @param {function} onDataChange - データ変更時に呼び出すコールバック (保存用)
- * @param {function} onTaskAdded - タスク追加時に呼び出すコールバック
- * @param {function} onTaskDeleted - ★追加: タスク削除時に呼び出すコールバック
+ * ToDoタスク関連ロジック初期化
+ * @param {object} sharedState 共有状態
+ * @param {function} onDataChange データ変更時コールバック
+ * @param {function} onTaskAdded タスク追加時コールバック
+ * @param {function} onTaskDeleted タスク削除時コールバック
+ * @param {function} onTaskCompleted タスク完了時コールバック
  */
-function initializeTaskLogic(sharedState, onDataChange, onTaskAdded, onTaskDeleted) { // ★引数を追加
+function initializeTaskLogic(sharedState, onDataChange, onTaskAdded, onTaskDeleted, onTaskCompleted) {
 
     // --- DOM要素 ---
     const taskForm = document.getElementById('task-form');
@@ -14,7 +15,7 @@ function initializeTaskLogic(sharedState, onDataChange, onTaskAdded, onTaskDelet
     const taskListMaze = document.getElementById('task-list'); 
     const todoListUl = document.getElementById('todo-list-ul'); 
 
-    // (カレンダーのクリックイベントは変更なし)
+    // カレンダーピッカー表示
     taskDeadlineInput.addEventListener('click', (e) => {
         e.preventDefault(); 
         try {
@@ -24,9 +25,9 @@ function initializeTaskLogic(sharedState, onDataChange, onTaskAdded, onTaskDelet
         }
     });
 
-    // (ソート・描画関連, 警告関数, drawTaskToList, drawTaskToMaze, 
-    //  completeTask, handleChangeName, handleChangeDeadline は変更なし)
-    // ...
+    // --- ユーティリティ・描画関数 ---
+    
+    // タスクを日付でソート
     const sortTasks = () => {
         sharedState.tasks.sort((a, b) => {
             const dateA = a.deadline ? new Date(a.deadline) : null;
@@ -37,18 +38,24 @@ function initializeTaskLogic(sharedState, onDataChange, onTaskAdded, onTaskDelet
             else { return 0; }
         });
     };
+    
+    // ToDoリストDOM再描画
     const renderTaskList = () => {
         todoListUl.innerHTML = '';
         sharedState.tasks.forEach(task => {
             drawTaskToList(task);
         });
     };
+    
+    // 迷路上の餌DOM再描画
     const renderMazeFeeds = () => {
         taskListMaze.innerHTML = '';
         sharedState.mazeFeeds.forEach(feed => {
             drawTaskToMaze(feed);
         });
     };
+    
+    // 締切ステータス判定
     const getDeadlineStatus = (deadlineString) => {
         if (!deadlineString) return 'none';
         const today = new Date(); today.setHours(0, 0, 0, 0);
@@ -61,6 +68,8 @@ function initializeTaskLogic(sharedState, onDataChange, onTaskAdded, onTaskDelet
         if (diffDays < 0) return 'overdue';
         return 'none';
     };
+    
+    // ToDoリストにタスクを描画
     const drawTaskToList = (task) => {
         const li = document.createElement('li');
         li.dataset.id = task.id;
@@ -132,7 +141,7 @@ function initializeTaskLogic(sharedState, onDataChange, onTaskAdded, onTaskDelet
         deleteBtn.textContent = '削除';
         deleteBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            handleDeleteTask(task.id); // ★変更
+            handleDeleteTask(task.id); 
         });
         dropdownMenu.appendChild(deleteBtn);
         menuContainer.appendChild(dropdownMenu);
@@ -140,6 +149,8 @@ function initializeTaskLogic(sharedState, onDataChange, onTaskAdded, onTaskDelet
         li.appendChild(actionsContainer);
         todoListUl.appendChild(li);
     };
+    
+    // 迷路にタスク（餌）を描画
     const drawTaskToMaze = (feed) => {
         const taskElement = document.createElement('div');
         taskElement.classList.add('task-item');
@@ -158,6 +169,12 @@ function initializeTaskLogic(sharedState, onDataChange, onTaskAdded, onTaskDelet
         }
         taskListMaze.appendChild(taskElement);
     };
+
+    // --- タスク操作 ---
+
+    /**
+     * タスク完了（餌化）処理
+     */
     const completeTask = (taskId) => {
         if (sharedState.availableDots.length === 0) {
             alert('迷路上に餌を置くスペースがありません！');
@@ -165,8 +182,10 @@ function initializeTaskLogic(sharedState, onDataChange, onTaskAdded, onTaskDelet
         }
         const taskIndex = sharedState.tasks.findIndex(task => task.id === taskId);
         if (taskIndex === -1) return; 
+
         const taskToComplete = sharedState.tasks[taskIndex];
         const position = sharedState.availableDots.shift(); 
+        
         const newFeed = {
             id: taskToComplete.id,
             text: taskToComplete.text, 
@@ -175,13 +194,19 @@ function initializeTaskLogic(sharedState, onDataChange, onTaskAdded, onTaskDelet
         };
         sharedState.mazeFeeds.push(newFeed);
         drawTaskToMaze(newFeed); 
+        
         sharedState.tasks.splice(taskIndex, 1); 
-        if (onDataChange) onDataChange(); 
+        
         const liToRemove = todoListUl.querySelector(`li[data-id="${taskId}"]`);
         if (liToRemove) {
             liToRemove.remove();
         }
+
+        // 完了コールバック呼び出し (app.js)
+        if (onTaskCompleted) onTaskCompleted(taskId);
     };
+
+    // タスク名変更
     const handleChangeName = (taskId) => {
         const task = sharedState.tasks.find(t => t.id === taskId);
         if (!task) return;
@@ -194,6 +219,8 @@ function initializeTaskLogic(sharedState, onDataChange, onTaskAdded, onTaskDelet
              alert("タスク名は空にできません。");
         }
     };
+    
+    // 期限変更
     const handleChangeDeadline = (taskId) => {
         const task = sharedState.tasks.find(t => t.id === taskId);
         if (!task) return;
@@ -211,20 +238,20 @@ function initializeTaskLogic(sharedState, onDataChange, onTaskAdded, onTaskDelet
     };
 
     /**
-     * ★変更: 手動削除処理
+     * タスク手動削除処理 (餌にしない)
      */
     const handleDeleteTask = (taskId) => {
         if (!confirm("このタスクを完全に削除しますか？ (餌になりません)")) {
             return;
         }
         
-        // 1. 状態(tasks)から削除
+        // 状態(tasks)から削除
         sharedState.tasks = sharedState.tasks.filter(t => t.id !== taskId);
         
-        // 2. ★app.js にゴースト削除と保存を依頼
+        // app.js にゴースト削除と保存を依頼
         if (onTaskDeleted) onTaskDeleted(taskId); 
         
-        // 3. DOM(リスト)から削除
+        // DOM(リスト)から削除
         const liToRemove = todoListUl.querySelector(`li[data-id="${taskId}"]`);
         if (liToRemove) {
             liToRemove.remove();
@@ -232,7 +259,7 @@ function initializeTaskLogic(sharedState, onDataChange, onTaskAdded, onTaskDelet
     };
 
 
-    // (タスク追加フォームは変更なし)
+    // タスク追加フォーム
     taskForm.addEventListener('submit', (e) => {
         e.preventDefault();
         const text = taskInput.value.trim();
@@ -252,8 +279,9 @@ function initializeTaskLogic(sharedState, onDataChange, onTaskAdded, onTaskDelet
         taskDeadlineInput.value = ''; 
     });
 
-    // (外部公開用は変更なし)
+    // --- 外部公開用 (pacman.js / app.js から利用) ---
     window.taskLogic = {
+        // パックマンが餌（タスク）を食べたかチェック
         checkTaskCollision: (row, col) => {
             const taskToEat = taskListMaze.querySelector(`.task-item[data-row="${row}"][data-col="${col}"]`);
             if (taskToEat) {
@@ -266,6 +294,7 @@ function initializeTaskLogic(sharedState, onDataChange, onTaskAdded, onTaskDelet
             }
             return null;
         },
+        // 全描画（ロード時などに使用）
         renderAll: () => {
             renderMazeFeeds();
             sortTasks();
@@ -274,7 +303,7 @@ function initializeTaskLogic(sharedState, onDataChange, onTaskAdded, onTaskDelet
     };
 } 
 
-// (グローバルリスナーは変更なし)
+// メニュー外クリックでドロップダウンを閉じる
 window.addEventListener('click', (e) => {
     if (!e.target.closest('.menu-container')) {
         document.querySelectorAll('.menu-dropdown.show').forEach(menu => {

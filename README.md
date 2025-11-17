@@ -5,7 +5,7 @@
 **Pac-Done**は、クラシックなレトロゲームのUI/UXとゲーミフィケーションの要素を取り入れた、Todo管理アプリケーションです。
 
 **GitHub Pages**
-> [https://YOUR_USERNAME.github.io/YOUR_REPOSITORY_NAME/](https://kurobapp.github.io/Pac-Done/)
+> [https://kurobapp.github.io/Pac-Done/](https://kurobapp.github.io/Pac-Done/)
 >
 
 
@@ -30,7 +30,7 @@
 
 | タスク管理リスト | 迷路 (ゲーム画面) | 締切警告 |
 | :---: | :---: | :---: |
-| <img width="300" alt="タスク管理リスト" src="https://github.com/user-attachments/assets/11bfbe5b-d853-4a47-b35a-81747757719e"> | <img width="300" alt="迷路 (ゲーム画面)" src="https://github.com/user-attachments/assets/482f6657-c12b-4d50-a1b8-db802b1602d8"> | <img width="300" alt="締切警告" src="https://github.com/user-attachments/assets/7ab735f3-07b3-4ab5-8cbc-f5406df2bddd"> |
+| <img width="300" alt="全体図" src="https://github.com/user-attachments/assets/7ab735f3-07b3-4ab5-8cbc-f5406df2bddd"> | <img width="300" alt="タスク管理リスト" src="https://github.com/user-attachments/assets/482f6657-c12b-4d50-a1b8-db802b1602d8"> | <img width="300" alt="ゲーム画面" src="https://github.com/user-attachments/assets/11bfbe5b-d853-4a47-b35a-81747757719e"> |
 | タスクの追加や期限設定、完了（餌化）が行えます。 | 追加されたタスクはゴーストとして、完了したタスクは餌として出現します。 | 締切が近いタスクはリスト上で警告表示されます。 |
 
 
@@ -40,22 +40,22 @@
 ## 主な機能
 
 * **Todo管理機能**:
-    * タスクの追加（テキスト・期限日）
-    * タスク名の変更
-    * タスク期限の変更
-    * タスクの削除
-    * タスクの完了（＝迷路上の「餌」に変換）
+    * タスクの追加（テキスト・期限日）
+    * タスク名の変更
+    * タスク期限の変更
+    * タスクの削除
+    * タスクの完了（＝迷路上の「餌」に変換）
 * **ゲーム連携機能**:
-    * **ゴーストの発生**: タスクを追加すると、対応するゴーストが迷路に出現します。
-    * **スピードアップ**: 期限切れ（`isOverdue`）のタスクに対応するゴーストは、プレイヤーを**2倍速**で追跡します。
-    * **パワーアップ**: タスクを完了（餌化）すると、迷路にパワーエサが出現。食べると、対応するゴーストが一定時間「イジケ状態（`FRIGHTENED`）」になります。
+    * **ゴーストの発生**: タスクを追加すると、対応するゴーストが迷路に出現します。
+    * **スピードアップ**: 期限切れ（`isOverdue`）のタスクに対応するゴーストは、プレイヤーを**2倍速**で追跡します。
+    * **パワーアップ**: タスクを完了（餌化）すると、迷路にパワーエサが出現。食べると、対応するゴーストが一定時間「イジケ状態（`FRIGHTENED`）」になります。
     * **ゴーストの沈静化**: 期限切れで2倍速になっていたゴーストも、タスクを完了すれば通常の速度に戻ります。
     * **ペナルティ**: ゴーストに捕まると**スコアが0**になり、プレイヤーとゴーストが初期地点にリセットされます（ゴーストのイジケ状態などは維持されます）。
 * **UI/UX機能**:
-    * 締切日に応じたリスト項目のハイライト（2日前: Near, 当日/1日前: Danger）。
-    * Danger状態のタスクは点滅アニメーションで警告します。
+    * 締切日に応じたリスト項目のハイライト（2日前: Near, 当日/1日前: Danger）。
+    * Danger状態のタスクは点滅アニメーションで警告します。
 * **データ保存**:
-    * `localStorage` を使用し、タスクリスト、迷路上の餌、スコア、ゴーストの状態（種類、イジケ状態か否か）をブラウザに保存します。
+    * `localStorage` を使用し、タスクリスト、迷路上の餌、スコア、ゴーストの状態（種類、イジケ状態か否か）をブラウザに保存します。
 
 ---
 
@@ -67,9 +67,9 @@
 
 * **着想**: 単なるTodoリストではタスクを「こなす」だけですが、「タスク＝敵（ゴースト）」と見立て、それを「倒す（食べる）」というゲーム体験に落とし込むことで、オリジナリティの誇張を図りました。
 * **実装**: 3つの主要なJavaScriptファイル（`app.js`, `task.js`, `pacman.js`）が、コールバック関数と共有ステート（`sharedState`）を通じて連携するアーキテクチャを採用しました。
-    * `task.js` でタスクが追加されると `app.js` が検知し、`pacman.js` に「ゴースト生成（`spawnGhost`）」を命令します。
-    * この際、タスクのID（`taskId`）がゴーストのIDとして紐付けられます。
-    * `pacman.js` でパワーエサ（`taskId`を持つ）が食べられると、`app.js` を経由して、該当するIDを持つゴーストを「イジケ状態（`setGhostFrightened`）」にします。
+    * `task.js` でタスクが追加されると `app.js` が検知し、`pacman.js` に「ゴースト生成（`spawnGhost`）」を命令します。
+    * この際、タスクのID（`taskId`）がゴーストのIDとして紐付けられます。
+    * `pacman.js` でパワーエサ（`taskId`を持つ）が食べられると、`app.js` を経由して、該当するIDを持つゴーストを「イジケ状態（`setGhostFrightened`）」にします。
 
 ### 2. 「期限切れ」の視覚的・機能的ペナルティ
 
@@ -84,16 +84,16 @@
 
 * **HTML5**
 * **CSS3**
-    * CSS Grid Layout (迷路の描画)
-    * CSS Keyframes (締切警告アニメーション)
-    * `clip-path` (パックマンの口パク)
+    * CSS Grid Layout (迷路の描画)
+    * CSS Keyframes (締切警告アニメーション)
+    * `clip-path` (パックマンの口パク)
 * **JavaScript (ES6+)**
     * `localStorage` (データ永続化)
-    * DOM API (DOM操作)
-    * `setInterval` (ゲームループ)
+    * DOM API (DOM操作)
+    * `setInterval` (ゲームループ)
 
 ---
 
 ## 開発時間
-
+* 開発期間: 2025.11.01~2025.11.18
 * 開発時間: 約 25時間

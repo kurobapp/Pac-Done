@@ -28,7 +28,7 @@
 
 ## スクリーンショット
 
-| タスク管理リスト | 迷路 (ゲーム画面) | 締切警告 |
+| 全体図 | タスク管理リスト | ゲーム画面 |
 | :---: | :---: | :---: |
 | <img width="300" alt="全体図" src="https://github.com/user-attachments/assets/7ab735f3-07b3-4ab5-8cbc-f5406df2bddd"> | <img width="300" alt="タスク管理リスト" src="https://github.com/user-attachments/assets/482f6657-c12b-4d50-a1b8-db802b1602d8"> | <img width="300" alt="ゲーム画面" src="https://github.com/user-attachments/assets/11bfbe5b-d853-4a47-b35a-81747757719e"> |
 | タスクの追加や期限設定、完了（餌化）が行えます。 | 追加されたタスクはゴーストとして、完了したタスクは餌として出現します。 | 締切が近いタスクはリスト上で警告表示されます。 |
